@@ -1,4 +1,6 @@
 <?php
+session_start();
+
 // Configurações do Banco
 $host = "188.245.217.172";
 $user = "root";
@@ -50,6 +52,81 @@ $mei = null;
 $data_cadastro = null;
 $website = '';
 
+// Usuários fixos com senha hasheada
+$usuarios = [
+    'admin' => password_hash('admin1234', PASSWORD_DEFAULT),
+    'operador' => password_hash('operador1234', PASSWORD_DEFAULT)
+];
+
+// Logout
+if (isset($_GET['logout'])) {
+    session_destroy();
+    header("Location: index.php");
+    exit;
+}
+
+// Login
+if (isset($_POST['login'])) {
+    $username = $_POST['username'] ?? '';
+    $password = $_POST['password'] ?? '';
+
+    if (array_key_exists($username, $usuarios) && password_verify($password, $usuarios[$username])) {
+        $_SESSION['user'] = $username;
+        header("Location: index.php");
+        exit;
+    } else {
+        $loginError = "Usuário ou senha inválidos.";
+    }
+}
+
+// Verifica se o usuário está logado
+if (!isset($_SESSION['user'])) {
+?>
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <title>Login - CRM Calculador</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body { background-color: #f8f9fa; font-family: 'Segoe UI', sans-serif; }
+    </style>
+</head>
+<body>
+
+<div class="container d-flex align-items-center justify-content-center" style="height: 100vh;">
+    <div class="card shadow-sm w-100" style="max-width: 400px;">
+        <div class="card-header text-center">
+            <h4>Login - CRM Calculador</h4>
+        </div>
+        <div class="card-body">
+            <?php if (isset($loginError)): ?>
+                <div class="alert alert-danger"><?= h($loginError) ?></div>
+            <?php endif; ?>
+            <form method="post">
+                <div class="mb-3">
+                    <label class="form-label">Usuário</label>
+                    <input type="text" name="username" class="form-control" required>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Senha</label>
+                    <input type="password" name="password" class="form-control" required>
+                </div>
+                <button type="submit" name="login" class="btn btn-primary w-100">Entrar</button>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
+<?php
+exit;
+}
+
+$usuario_logado = $_SESSION['user'];
+
 // Salvar Contato
 if (isset($_POST['save_contact'])) {
     // Validação dos campos ENUM
@@ -90,8 +167,8 @@ if (isset($_POST['save_contact'])) {
     $observacoes = $conn->real_escape_string($_POST['observacoes'] ?? '');
     $atividade = $conn->real_escape_string($_POST['atividade'] ?? '');
     $natureza_juridica = $conn->real_escape_string($_POST['natureza_juridica'] ?? '');
-    $tipo_empresa = in_array($_POST['tipo_empresa'], ['matriz', 'filial']) ? $_POST['tipo_empresa'] : null;
-    $mei = in_array($_POST['mei'], ['sim', 'nao']) ? $_POST['mei'] : null;
+    $tipo_empresa = in_array($_POST['tipo_empresa'], $tipo_empresa_validos) ? $_POST['tipo_empresa'] : null;
+    $mei = in_array($_POST['mei'], $mei_validos) ? $_POST['mei'] : null;
     $data_cadastro = $_POST['data_cadastro'] ?? '';
     $data_cadastro = $data_cadastro ?: null;
     $website = $conn->real_escape_string($_POST['website'] ?? '');
@@ -143,28 +220,75 @@ if (isset($_POST['save_contact'])) {
     }
 }
 ?>
+
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
     <title>CRM - Calculador</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <!-- Bootstrap CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
 
     <style>
-        body { background-color: #f8f9fa; font-family: 'Segoe UI', sans-serif; }
-        .header-title { font-size: 1.75rem; font-weight: 600; color: #343a40; }
-        .card { border: none; box-shadow: 0 0.15rem 1.25rem rgba(0, 0, 0, 0.05); }
-        .table th, .table td { vertical-align: middle; }
-        .required::after { color: red; content: " *"; }
-        footer { margin-top: 60px; text-align: center; font-size: 0.85rem; color: #888; }
-        .pagination-responsive { flex-wrap: wrap; justify-content: center; gap: 0.25rem; }
-        .pagination-responsive .page-item { flex: 1 1 auto; max-width: 60px; text-align: center; }
-        .pagination-responsive .page-link { padding: 0.375rem 0.5rem; font-size: 0.875rem; }
+        body {
+            background-color: #f8f9fa;
+            font-family: 'Segoe UI', sans-serif;
+        }
+
+        .header-title {
+            font-size: 1.75rem;
+            font-weight: 600;
+            color: #343a40;
+        }
+
+        .card {
+            border: none;
+            box-shadow: 0 0.15rem 1.25rem rgba(0, 0, 0, 0.05);
+        }
+
+        .table th, .table td {
+            vertical-align: middle;
+        }
+
+        .required::after {
+            color: red;
+            content: " *";
+        }
+
+        footer {
+            margin-top: 60px;
+            text-align: center;
+            font-size: 0.85rem;
+            color: #888;
+        }
+
+        /* Paginação responsiva */
+        .pagination-responsive {
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 0.25rem;
+        }
+
+        .pagination-responsive .page-item {
+            flex: 1 1 auto;
+            max-width: 60px;
+            text-align: center;
+        }
+
+        .pagination-responsive .page-link {
+            padding: 0.375rem 0.5rem;
+            font-size: 0.875rem;
+        }
+
         @media (max-width: 576px) {
             .pagination-responsive .page-item:not(:first-child):not(:last-child) { display: none; }
-            .pagination-responsive .page-item:nth-child(2), .pagination-responsive .page-item:nth-last-child(2) { display: block; }
-            .pagination-responsive .page-item.active, .pagination-responsive .page-item:first-child, .pagination-responsive .page-item:last-child { display: block; }
+            .pagination-responsive .page-item:nth-child(2), 
+            .pagination-responsive .page-item:nth-last-child(2) { display: block; }
+            .pagination-responsive .page-item.active, 
+            .pagination-responsive .page-item:first-child, 
+            .pagination-responsive .page-item:last-child { display: block; }
         }
     </style>
 </head>
@@ -174,7 +298,10 @@ if (isset($_POST['save_contact'])) {
     <!-- Cabeçalho -->
     <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center mb-4">
         <h1 class="header-title">Clientes - Calculador</h1>
-        <a href="?new" class="btn btn-success mt-2 mt-md-0">+ Novo Contato</a>
+        <div class="d-flex align-items-center mt-2 mt-md-0">
+            <span class="me-3">Olá, <?= h($usuario_logado) ?></span>
+            <a href="?logout" class="btn btn-outline-secondary btn-sm">Sair</a>
+        </div>
     </div>
 
     <!-- Filtros -->
@@ -210,19 +337,23 @@ if (isset($_POST['save_contact'])) {
                         if (!empty($_GET['nome'])) $where[] = "nome LIKE '%" . $conn->real_escape_string($_GET['nome']) . "%'";
                         if (!empty($_GET['email'])) $where[] = "email LIKE '%" . $conn->real_escape_string($_GET['email']) . "%'";
                         if (!empty($_GET['empresa'])) $where[] = "razao_social LIKE '%" . $conn->real_escape_string($_GET['empresa']) . "%' OR nome_fantasia LIKE '%" . $conn->real_escape_string($_GET['empresa']) . "%'";
-                        $where[] = "origem = 'Calculador'";
+
+                        // Somente operador tem filtro por 'Calculador'
+                        if ($usuario_logado === 'operador') {
+                            $where[] = "origem = 'Calculador'";
+                        }
 
                         $whereClause = implode(' AND ', $where);
                         $pagina = isset($_GET['pagina']) ? max(1, intval($_GET['pagina'])) : 1;
                         $por_pagina = 10;
                         $offset = ($pagina - 1) * $por_pagina;
 
-                        $total_sql = "SELECT COUNT(*) FROM tabela_principal WHERE $whereClause";
+                        $total_sql = "SELECT COUNT(*) FROM tabela_principal" . ($whereClause ? " WHERE $whereClause" : "");
                         $total_res = $conn->query($total_sql);
                         $total_row = $total_res->fetch_row();
                         $total = $total_row[0];
 
-                        $sql = "SELECT id, nome, razao_social, email, telefone1, origem FROM tabela_principal WHERE $whereClause LIMIT $offset, $por_pagina";
+                        $sql = "SELECT id, nome, razao_social, email, telefone1, origem FROM tabela_principal" . ($whereClause ? " WHERE $whereClause" : "") . " LIMIT $offset, $por_pagina";
                         $result = $conn->query($sql);
                         ?>
 
@@ -254,12 +385,16 @@ if (isset($_POST['save_contact'])) {
                 <ul class="pagination pagination-responsive justify-content-center flex-wrap">
                     <?php for ($i = 1; $i <= ceil($total / $por_pagina); $i++): ?>
                         <li class="page-item <?= $pagina == $i ? 'active' : '' ?>">
-                            <a class="page-link" href="?<?= http_build_query(array_merge($_GET, ['pagina' => $i])) ?>"><?= $i ?></a>
+                            <a class="page-link" href="?<?= http_build_query(array_merge($_GET, ['pagina' => $i]) ?>"><?= $i ?></a>
                         </li>
                     <?php endfor; ?>
                 </ul>
             </nav>
         </div>
+    </div>
+
+    <div class="d-grid mt-3">
+        <a href="?new" class="btn btn-success">+ Novo Contato</a>
     </div>
 </div>
 
