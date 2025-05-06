@@ -314,8 +314,8 @@ if (isset($_POST['save_contact'])) {
                             <label class="form-label">Tipo de Pessoa</label>
                             <select name="tipo_pessoa" class="form-select">
                                 <option value="">Selecione</option>
-                                <option value="fisica" <?= (h($contact['tipo_pessoa'] ?? '') === 'fisica' ? 'selected' : '' ?>>Pessoa Física</option>
-                                <option value="juridica" <?= (h($contact['tipo_pessoa'] ?? '') === 'juridica' ? 'selected' : '' ?>>Pessoa Jurídica</option>
+                                <option value="fisica" <?= (h($contact['tipo_pessoa'] ?? '') === 'fisica') ? 'selected' : '' ?>>Pessoa Física</option>
+                                <option value="juridica" <?= (h($contact['tipo_pessoa'] ?? '') === 'juridica') ? 'selected' : '' ?>>Pessoa Jurídica</option>
                             </select>
                         </div>
                         <div class="col-md-6">
