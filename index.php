@@ -18,7 +18,7 @@ function h(?string $str): string {
 
 // Salvar Contato
 if (isset($_POST['save_contact'])) {
-    // Validação dos campos ENUM
+    // Validação dos campos ENUM (agora aceita nulo)
     $tipo_pessoa_validos = ['fisica', 'juridica'];
     $status_validos = ['ativo', 'inativo', 'bloqueado'];
     $tipo_empresa_validos = ['matriz', 'filial'];
@@ -47,33 +47,35 @@ if (isset($_POST['save_contact'])) {
     $cargo = $conn->real_escape_string($_POST['cargo'] ?? '');
     $vinculo = $conn->real_escape_string($_POST['vinculo'] ?? '');
     $classificacao = $conn->real_escape_string($_POST['classificacao'] ?? '');
-    $status = in_array($_POST['status'], $status_validos) ? $_POST['status'] : null;
+    $status = in_array($_POST['status'], ['ativo', 'inativo', 'bloqueado']) ? $_POST['status'] : null;
     $origem = 'Calculador';
     $tipo_interacao = $conn->real_escape_string($_POST['tipo_interacao'] ?? '');
     $data_interacao = $conn->real_escape_string($_POST['data_interacao'] ?? '');
     $observacoes = $conn->real_escape_string($_POST['observacoes'] ?? '');
     $atividade = $conn->real_escape_string($_POST['atividade'] ?? '');
     $natureza_juridica = $conn->real_escape_string($_POST['natureza_juridica'] ?? '');
-    $tipo_empresa = in_array($_POST['tipo_empresa'], $tipo_empresa_validos) ? $_POST['tipo_empresa'] : null;
-    $mei = in_array($_POST['mei'], $mei_validos) ? $_POST['mei'] : null;
+    $tipo_empresa = in_array($_POST['tipo_empresa'], ['matriz', 'filial']) ? $_POST['tipo_empresa'] : null;
+    $mei = in_array($_POST['mei'], ['sim', 'nao']) ? $_POST['mei'] : null;
     $data_cadastro = $conn->real_escape_string($_POST['data_cadastro'] ?? '');
     $website = $conn->real_escape_string($_POST['website'] ?? '');
 
-    if (!$tipo_pessoa || !$status || !$tipo_empresa || !$mei) {
-        die("Valores inválidos nos campos de seleção.");
+    if (!$nome) {
+        die("O campo Nome é obrigatório.");
     }
 
     if ($id > 0) {
         $sql = "UPDATE tabela_principal SET 
             nome='$nome', razao_social='$razao_social', nome_fantasia='$nome_fantasia',
-            cnpj='$cnpj', cpf='$cpf', tipo_pessoa='$tipo_pessoa', endereco='$endereco',
-            complemento='$complemento', bairro='$bairro', cidade='$cidade', uf='$uf',
+            cnpj='$cnpj', cpf='$cpf', tipo_pessoa=" . ($tipo_pessoa !== null ? "'$tipo_pessoa'" : "NULL") . ",
+            endereco='$endereco', complemento='$complemento', bairro='$bairro', cidade='$cidade', uf='$uf',
             cep='$cep', pais='$pais', ddd='$ddd', telefone1='$telefone1', telefone2='$telefone2',
             telefone3='$telefone3', whatsapp='$whatsapp', email='$email', cargo='$cargo',
-            vinculo='$vinculo', classificacao='$classificacao', status='$status',
+            vinculo='$vinculo', classificacao='$classificacao', status=" . ($status !== null ? "'$status'" : "NULL") . ",
             origem='Calculador', tipo_interacao='$tipo_interacao', data_interacao='$data_interacao',
             observacoes='$observacoes', atividade='$atividade', natureza_juridica='$natureza_juridica',
-            tipo_empresa='$tipo_empresa', mei='$mei', data_cadastro='$data_cadastro', website='$website'
+            tipo_empresa=" . ($tipo_empresa !== null ? "'$tipo_empresa'" : "NULL") . ",
+            mei=" . ($mei !== null ? "'$mei'" : "NULL") . ",
+            data_cadastro='$data_cadastro', website='$website'
             WHERE id=$id";
     } else {
         $sql = "INSERT INTO tabela_principal (
@@ -83,11 +85,12 @@ if (isset($_POST['save_contact'])) {
             origem, tipo_interacao, data_interacao, observacoes, atividade,
             natureza_juridica, tipo_empresa, mei, data_cadastro, website
         ) VALUES (
-            '$nome', '$razao_social', '$nome_fantasia', '$cnpj', '$cpf', '$tipo_pessoa', '$endereco',
-            '$complemento', '$bairro', '$cidade', '$uf', '$cep', '$pais', '$ddd', '$telefone1', '$telefone2',
-            '$telefone3', '$whatsapp', '$email', '$cargo', '$vinculo', '$classificacao', '$status',
-            'Calculador', '$tipo_interacao', '$data_interacao', '$observacoes', '$atividade',
-            '$natureza_juridica', '$tipo_empresa', '$mei', '$data_cadastro', '$website'
+            '$nome', '$razao_social', '$nome_fantasia', '$cnpj', '$cpf', " . ($tipo_pessoa !== null ? "'$tipo_pessoa'" : "NULL") . ",
+            '$endereco', '$complemento', '$bairro', '$cidade', '$uf', '$cep', '$pais', '$ddd', '$telefone1', '$telefone2',
+            '$telefone3', '$whatsapp', '$email', '$cargo', '$vinculo', '$classificacao', " . ($status !== null ? "'$status'" : "NULL") . ",
+            'Calculador', '$tipo_interacao', '$data_interacao', '$observacoes', '$atividade', '$natureza_juridica',
+            " . ($tipo_empresa !== null ? "'$tipo_empresa'" : "NULL") . ", " . ($mei !== null ? "'$mei'" : "NULL") . ",
+            '$data_cadastro', '$website'
         )";
     }
 
@@ -107,7 +110,6 @@ if (isset($_GET['delete'])) {
     exit;
 }
 ?>
-
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
@@ -258,8 +260,8 @@ if (isset($_GET['delete'])) {
                             <input type="text" name="cpf" class="form-control" value="<?= h($contact['cpf'] ?? '') ?>">
                         </div>
                         <div class="col-md-6">
-                            <label class="required">Tipo de Pessoa</label>
-                            <select name="tipo_pessoa" class="form-control" required>
+                            <label>Tipo de Pessoa</label>
+                            <select name="tipo_pessoa" class="form-control">
                                 <option value="">Selecione</option>
                                 <option value="fisica" <?= (h($contact['tipo_pessoa'] ?? '') === 'fisica') ? 'selected' : '' ?>>Pessoa Física</option>
                                 <option value="juridica" <?= (h($contact['tipo_pessoa'] ?? '') === 'juridica') ? 'selected' : '' ?>>Pessoa Jurídica</option>
