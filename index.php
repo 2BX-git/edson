@@ -47,15 +47,18 @@ if (isset($_POST['save_contact'])) {
     $vinculo = $conn->real_escape_string($_POST['vinculo'] ?? '');
     $classificacao = $conn->real_escape_string($_POST['classificacao'] ?? '');
     $status = in_array($_POST['status'], ['ativo', 'inativo', 'bloqueado']) ? $_POST['status'] : null;
-    $origem = 'Calculador';
-    $tipo_interacao = $conn->real_escape_string($_POST['tipo_interacao'] ?? '');
-    $data_interacao = $conn->real_escape_string($_POST['data_interacao'] ?? '');
+
+    // Tratamento especial para campos DATE
+    $data_interacao = $_POST['data_interacao'] ?? '';
+    $data_interacao = $data_interacao ?: null;
+
     $observacoes = $conn->real_escape_string($_POST['observacoes'] ?? '');
     $atividade = $conn->real_escape_string($_POST['atividade'] ?? '');
     $natureza_juridica = $conn->real_escape_string($_POST['natureza_juridica'] ?? '');
     $tipo_empresa = in_array($_POST['tipo_empresa'], ['matriz', 'filial']) ? $_POST['tipo_empresa'] : null;
     $mei = in_array($_POST['mei'], ['sim', 'nao']) ? $_POST['mei'] : null;
-    $data_cadastro = $conn->real_escape_string($_POST['data_cadastro'] ?? '');
+    $data_cadastro = $_POST['data_cadastro'] ?? '';
+    $data_cadastro = $data_cadastro ?: null;
     $website = $conn->real_escape_string($_POST['website'] ?? '');
 
     if (!$nome) {
@@ -70,11 +73,12 @@ if (isset($_POST['save_contact'])) {
             cep='$cep', pais='$pais', ddd='$ddd', telefone1='$telefone1', telefone2='$telefone2',
             telefone3='$telefone3', whatsapp='$whatsapp', email='$email', cargo='$cargo',
             vinculo='$vinculo', classificacao='$classificacao', status=" . ($status !== null ? "'$status'" : "NULL") . ",
-            origem='Calculador', tipo_interacao='$tipo_interacao', data_interacao='$data_interacao',
+            origem='Calculador', tipo_interacao='$tipo_interacao', data_interacao=" . ($data_interacao !== null ? "'$data_interacao'" : "NULL") . ",
             observacoes='$observacoes', atividade='$atividade', natureza_juridica='$natureza_juridica',
             tipo_empresa=" . ($tipo_empresa !== null ? "'$tipo_empresa'" : "NULL") . ",
             mei=" . ($mei !== null ? "'$mei'" : "NULL") . ",
-            data_cadastro='$data_cadastro', website='$website'
+            data_cadastro=" . ($data_cadastro !== null ? "'$data_cadastro'" : "NULL") . ",
+            website='$website'
             WHERE id=$id";
     } else {
         $sql = "INSERT INTO tabela_principal (
@@ -87,9 +91,10 @@ if (isset($_POST['save_contact'])) {
             '$nome', '$razao_social', '$nome_fantasia', '$cnpj', '$cpf', " . ($tipo_pessoa !== null ? "'$tipo_pessoa'" : "NULL") . ",
             '$endereco', '$complemento', '$bairro', '$cidade', '$uf', '$cep', '$pais', '$ddd', '$telefone1', '$telefone2',
             '$telefone3', '$whatsapp', '$email', '$cargo', '$vinculo', '$classificacao', " . ($status !== null ? "'$status'" : "NULL") . ",
-            'Calculador', '$tipo_interacao', '$data_interacao', '$observacoes', '$atividade', '$natureza_juridica',
+            'Calculador', '$tipo_interacao', " . ($data_interacao !== null ? "'$data_interacao'" : "NULL") . ",
+            '$observacoes', '$atividade', '$natureza_juridica',
             " . ($tipo_empresa !== null ? "'$tipo_empresa'" : "NULL") . ", " . ($mei !== null ? "'$mei'" : "NULL") . ",
-            '$data_cadastro', '$website'
+            " . ($data_cadastro !== null ? "'$data_cadastro'" : "NULL") . ", '$website'
         )";
     }
 
@@ -164,8 +169,11 @@ if (isset($_POST['save_contact'])) {
 
         @media (max-width: 576px) {
             .pagination-responsive .page-item:not(:first-child):not(:last-child) { display: none; }
-            .pagination-responsive .page-item:nth-child(2), .pagination-responsive .page-item:nth-last-child(2) { display: block; }
-            .pagination-responsive .page-item.active, .pagination-responsive .page-item:first-child, .pagination-responsive .page-item:last-child { display: block; }
+            .pagination-responsive .page-item:nth-child(2), 
+            .pagination-responsive .page-item:nth-last-child(2) { display: block; }
+            .pagination-responsive .page-item.active, 
+            .pagination-responsive .page-item:first-child, 
+            .pagination-responsive .page-item:last-child { display: block; }
         }
     </style>
 </head>
