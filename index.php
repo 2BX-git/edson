@@ -136,7 +136,7 @@ if (isset($_POST['save_contact'])) {
     }
 
     if ($conn->query($sql)) {
-        header("Location: crm.php?saved=1");
+        header("Location: index.php?saved=1");
         exit;
     } else {
         die("Erro ao salvar contato: " . $conn->error);
