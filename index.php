@@ -1,6 +1,4 @@
 <?php
-session_start();
-
 // Configurações do Banco
 $host = "188.245.217.172";
 $user = "root";
@@ -18,77 +16,97 @@ function h(?string $str): string {
     return htmlspecialchars((string)$str, ENT_QUOTES, 'UTF-8');
 }
 
-// Logout
-if (isset($_GET['logout'])) {
-    session_destroy();
+// Salvar Contato
+if (isset($_POST['save_contact'])) {
+    // Validação dos campos ENUM
+    $tipo_pessoa_validos = ['fisica', 'juridica'];
+    $status_validos = ['ativo', 'inativo', 'bloqueado'];
+    $tipo_empresa_validos = ['matriz', 'filial'];
+    $mei_validos = ['sim', 'nao'];
+
+    $id = intval($_POST['id']);
+    $nome = $conn->real_escape_string($_POST['nome'] ?? '');
+    $razao_social = $conn->real_escape_string($_POST['razao_social'] ?? '');
+    $nome_fantasia = $conn->real_escape_string($_POST['nome_fantasia'] ?? '');
+    $cnpj = $conn->real_escape_string($_POST['cnpj'] ?? '');
+    $cpf = $conn->real_escape_string($_POST['cpf'] ?? '');
+    $tipo_pessoa = in_array($_POST['tipo_pessoa'], $tipo_pessoa_validos) ? $_POST['tipo_pessoa'] : null;
+    $endereco = $conn->real_escape_string($_POST['endereco'] ?? '');
+    $complemento = $conn->real_escape_string($_POST['complemento'] ?? '');
+    $bairro = $conn->real_escape_string($_POST['bairro'] ?? '');
+    $cidade = $conn->real_escape_string($_POST['cidade'] ?? '');
+    $uf = $conn->real_escape_string($_POST['uf'] ?? '');
+    $cep = $conn->real_escape_string($_POST['cep'] ?? '');
+    $pais = $conn->real_escape_string($_POST['pais'] ?? '');
+    $ddd = $conn->real_escape_string($_POST['ddd'] ?? '');
+    $telefone1 = $conn->real_escape_string($_POST['telefone1'] ?? '');
+    $telefone2 = $conn->real_escape_string($_POST['telefone2'] ?? '');
+    $telefone3 = $conn->real_escape_string($_POST['telefone3'] ?? '');
+    $whatsapp = $conn->real_escape_string($_POST['whatsapp'] ?? '');
+    $email = $conn->real_escape_string($_POST['email'] ?? '');
+    $cargo = $conn->real_escape_string($_POST['cargo'] ?? '');
+    $vinculo = $conn->real_escape_string($_POST['vinculo'] ?? '');
+    $classificacao = $conn->real_escape_string($_POST['classificacao'] ?? '');
+    $status = in_array($_POST['status'], $status_validos) ? $_POST['status'] : null;
+    $origem = 'Calculador';
+    $tipo_interacao = $conn->real_escape_string($_POST['tipo_interacao'] ?? '');
+    $data_interacao = $conn->real_escape_string($_POST['data_interacao'] ?? '');
+    $observacoes = $conn->real_escape_string($_POST['observacoes'] ?? '');
+    $atividade = $conn->real_escape_string($_POST['atividade'] ?? '');
+    $natureza_juridica = $conn->real_escape_string($_POST['natureza_juridica'] ?? '');
+    $tipo_empresa = in_array($_POST['tipo_empresa'], $tipo_empresa_validos) ? $_POST['tipo_empresa'] : null;
+    $mei = in_array($_POST['mei'], $mei_validos) ? $_POST['mei'] : null;
+    $data_cadastro = $conn->real_escape_string($_POST['data_cadastro'] ?? '');
+    $website = $conn->real_escape_string($_POST['website'] ?? '');
+
+    if (!$tipo_pessoa || !$status || !$tipo_empresa || !$mei) {
+        die("Valores inválidos nos campos de seleção.");
+    }
+
+    if ($id > 0) {
+        $sql = "UPDATE tabela_principal SET 
+            nome='$nome', razao_social='$razao_social', nome_fantasia='$nome_fantasia',
+            cnpj='$cnpj', cpf='$cpf', tipo_pessoa='$tipo_pessoa', endereco='$endereco',
+            complemento='$complemento', bairro='$bairro', cidade='$cidade', uf='$uf',
+            cep='$cep', pais='$pais', ddd='$ddd', telefone1='$telefone1', telefone2='$telefone2',
+            telefone3='$telefone3', whatsapp='$whatsapp', email='$email', cargo='$cargo',
+            vinculo='$vinculo', classificacao='$classificacao', status='$status',
+            origem='Calculador', tipo_interacao='$tipo_interacao', data_interacao='$data_interacao',
+            observacoes='$observacoes', atividade='$atividade', natureza_juridica='$natureza_juridica',
+            tipo_empresa='$tipo_empresa', mei='$mei', data_cadastro='$data_cadastro', website='$website'
+            WHERE id=$id";
+    } else {
+        $sql = "INSERT INTO tabela_principal (
+            nome, razao_social, nome_fantasia, cnpj, cpf, tipo_pessoa, endereco,
+            complemento, bairro, cidade, uf, cep, pais, ddd, telefone1, telefone2,
+            telefone3, whatsapp, email, cargo, vinculo, classificacao, status,
+            origem, tipo_interacao, data_interacao, observacoes, atividade,
+            natureza_juridica, tipo_empresa, mei, data_cadastro, website
+        ) VALUES (
+            '$nome', '$razao_social', '$nome_fantasia', '$cnpj', '$cpf', '$tipo_pessoa', '$endereco',
+            '$complemento', '$bairro', '$cidade', '$uf', '$cep', '$pais', '$ddd', '$telefone1', '$telefone2',
+            '$telefone3', '$whatsapp', '$email', '$cargo', '$vinculo', '$classificacao', '$status',
+            'Calculador', '$tipo_interacao', '$data_interacao', '$observacoes', '$atividade',
+            '$natureza_juridica', '$tipo_empresa', '$mei', '$data_cadastro', '$website'
+        )";
+    }
+
+    if ($conn->query($sql)) {
+        header("Location: crm.php?saved=1");
+        exit;
+    } else {
+        die("Erro ao salvar contato: " . $conn->error);
+    }
+}
+
+// Deletar Contato
+if (isset($_GET['delete'])) {
+    $id = intval($_GET['delete']);
+    $conn->query("DELETE FROM tabela_principal WHERE id=$id");
     header("Location: crm.php");
     exit;
 }
-
-// Login
-if (isset($_POST['login'])) {
-    $username = $_POST['username'] ?? '';
-    $password = $_POST['password'] ?? '';
-
-    $stmt = $conn->prepare("SELECT id, username, password_hash, tipo FROM usuarios WHERE username = ?");
-    $stmt->bind_param("s", $username);
-    $stmt->execute();
-    $result = $stmt->get_result();
-    if ($user = $result->fetch_assoc()) {
-        if (password_verify($password, $user['password_hash'])) {
-            $_SESSION['user_id'] = $user['id'];
-            $_SESSION['username'] = $user['username'];
-            $_SESSION['tipo'] = $user['tipo'];
-            header("Location: crm.php");
-            exit;
-        }
-    }
-    $loginError = "Login inválido.";
-}
-
-// Verifica se o usuário está logado
-if (!isset($_SESSION['user_id'])):
 ?>
-<!DOCTYPE html>
-<html lang="pt-BR">
-<head>
-    <meta charset="UTF-8">
-    <title>Login - CRM Calculador</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-    <style>
-        body { background-color: #f1f3f6; font-family: 'Segoe UI', sans-serif; }
-    </style>
-</head>
-<body>
-
-<div class="container d-flex align-items-center justify-content-center" style="height: 100vh;">
-    <div class="card shadow-sm w-100" style="max-width: 400px;">
-        <div class="card-header text-center">
-            <h4>Login - CRM Calculador</h4>
-        </div>
-        <div class="card-body">
-            <?php if (isset($loginError)): ?>
-                <div class="alert alert-danger"><?= h($loginError) ?></div>
-            <?php endif; ?>
-            <form method="post">
-                <div class="mb-3">
-                    <label class="form-label">Usuário</label>
-                    <input type="text" name="username" class="form-control" required>
-                </div>
-                <div class="mb-3">
-                    <label class="form-label">Senha</label>
-                    <input type="password" name="password" class="form-control" required>
-                </div>
-                <button type="submit" name="login" class="btn btn-primary w-100">Entrar</button>
-            </form>
-        </div>
-    </div>
-</div>
-
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
-</body>
-</html>
-<?php exit; endif; ?>
 
 <!DOCTYPE html>
 <html lang="pt-BR">
@@ -98,8 +116,7 @@ if (!isset($_SESSION['user_id'])):
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
         body { background-color: #f1f3f6; font-family: 'Segoe UI', sans-serif; }
-        .sidebar { width: 250px; background-color: #212529; height: 100vh; position: fixed; top: 0; left: 0; padding-top: 20px; color: white; }
-        .content { margin-left: 250px; padding: 30px; }
+        .content { padding: 30px; }
         .card { box-shadow: 0 0.15rem 1.75rem rgba(58,59,69,.15); border: none; }
         .table thead th { vertical-align: middle; font-weight: 600; background-color: #e9ecef; }
         footer { margin-top: 50px; text-align: center; color: #888; font-size: 0.9rem; }
@@ -108,19 +125,9 @@ if (!isset($_SESSION['user_id'])):
 </head>
 <body>
 
-<!-- Sidebar -->
-<div class="sidebar text-white">
-    <h5 class="text-center mb-4">CRM - Calculador</h5>
-    <ul class="nav flex-column px-3">
-        <li class="nav-item"><a href="crm.php" class="nav-link text-white">Contatos</a></li>
-        <li class="nav-item"><a href="?new" class="nav-link text-white">+ Novo Contato</a></li>
-        <li class="nav-item"><a href="?logout" class="nav-link text-white">Sair</a></li>
-    </ul>
-</div>
-
 <!-- Conteúdo Principal -->
-<div class="content">
-    <h2 class="mb-4">Clientes</h2>
+<div class="content container">
+    <h2 class="mb-4">Clientes - Calculador</h2>
 
     <!-- Filtros -->
     <form method="get" class="row g-2 mb-3">
@@ -155,22 +162,18 @@ if (!isset($_SESSION['user_id'])):
                         if (!empty($_GET['nome'])) $where[] = "nome LIKE '%" . $conn->real_escape_string($_GET['nome']) . "%'";
                         if (!empty($_GET['email'])) $where[] = "email LIKE '%" . $conn->real_escape_string($_GET['email']) . "%'";
                         if (!empty($_GET['empresa'])) $where[] = "razao_social LIKE '%" . $conn->real_escape_string($_GET['empresa']) . "%' OR nome_fantasia LIKE '%" . $conn->real_escape_string($_GET['empresa']) . "%'";
-
-                        // Apenas operador tem filtro por origem
-                        if ($_SESSION['tipo'] === 'operador') {
-                            $where[] = "origem = 'Calculador'";
-                        }
+                        $where[] = "origem = 'Calculador'";
 
                         $whereClause = implode(' AND ', $where);
                         $pagina = isset($_GET['pagina']) ? max(1, intval($_GET['pagina'])) : 1;
                         $por_pagina = 10;
                         $offset = ($pagina - 1) * $por_pagina;
 
-                        $total_sql = "SELECT COUNT(*) FROM tabela_principal" . ($whereClause ? " WHERE $whereClause" : "");
+                        $total_sql = "SELECT COUNT(*) FROM tabela_principal WHERE $whereClause";
                         $total_res = $conn->query($total_sql);
                         $total = $total_res->fetch_row()[0];
 
-                        $sql = "SELECT id, nome, razao_social, email, telefone1 FROM tabela_principal" . ($whereClause ? " WHERE $whereClause" : "") . " LIMIT $offset, $por_pagina";
+                        $sql = "SELECT id, nome, razao_social, email, telefone1 FROM tabela_principal WHERE $whereClause LIMIT $offset, $por_pagina";
                         $result = $conn->query($sql);
 
                         if ($result->num_rows === 0): ?>
@@ -205,6 +208,10 @@ if (!isset($_SESSION['user_id'])):
                 </ul>
             </nav>
         </div>
+    </div>
+
+    <div class="d-grid gap-2 d-md-flex justify-content-md-end mt-3">
+        <a href="?new" class="btn btn-success">+ Novo Contato</a>
     </div>
 
     <footer>&copy; 2025 CRM Calculador</footer>
