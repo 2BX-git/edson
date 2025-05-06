@@ -2,7 +2,7 @@
 // auth.php
 
 $usuarios = [
-    'admin' => ['senha' => password_hash('A@dm!nS3gur0#2025', PASSWORD_DEFAULT), 'tipo' => 'admin'],
+    'admin' => ['senha' => password_hash('@Adriano', PASSWORD_DEFAULT), 'tipo' => 'admin'],
     'operador' => ['senha' => password_hash('Op3r@d0rC0nf!4v3l$2025', PASSWORD_DEFAULT), 'tipo' => 'operador']
 ];
 
