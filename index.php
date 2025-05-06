@@ -1,7 +1,4 @@
 <?php
-// Inicialize a sessão no topo
-session_start();
-
 // Configurações do Banco
 $host = "188.245.217.172";
 $user = "root";
@@ -18,7 +15,7 @@ function h(?string $str): string {
     return htmlspecialchars((string)$str, ENT_QUOTES, 'UTF-8');
 }
 
-// Defina todas as variáveis no início para evitar "undefined variable"
+// Defina todas as variáveis no início para evitar erros de "undefined"
 $id = 0;
 $nome = '';
 $razao_social = '';
@@ -43,7 +40,7 @@ $cargo = '';
 $vinculo = '';
 $classificacao = '';
 $status = null;
-$tipo_interacao = null; // ✅ Correção: esta linha faltava
+$tipo_interacao = null;
 $data_interacao = null;
 $observacoes = '';
 $atividade = '';
@@ -111,7 +108,8 @@ if (isset($_POST['save_contact'])) {
             cep='$cep', pais='$pais', ddd='$ddd', telefone1='$telefone1', telefone2='$telefone2',
             telefone3='$telefone3', whatsapp='$whatsapp', email='$email', cargo='$cargo',
             vinculo='$vinculo', classificacao='$classificacao', status=" . ($status !== null ? "'$status'" : "NULL") . ",
-            origem='Calculador', tipo_interacao='$tipo_interacao', data_interacao=" . ($data_interacao !== null ? "'$data_interacao'" : "NULL") . ",
+            origem='Calculador', tipo_interacao=" . ($tipo_interacao !== null ? "'$tipo_interacao'" : "NULL") . ",
+            data_interacao=" . ($data_interacao !== null ? "'$data_interacao'" : "NULL") . ",
             observacoes='$observacoes', atividade='$atividade', natureza_juridica='$natureza_juridica',
             tipo_empresa=" . ($tipo_empresa !== null ? "'$tipo_empresa'" : "NULL") . ",
             mei=" . ($mei !== null ? "'$mei'" : "NULL") . ",
@@ -129,7 +127,8 @@ if (isset($_POST['save_contact'])) {
             '$nome', '$razao_social', '$nome_fantasia', '$cnpj', '$cpf', " . ($tipo_pessoa !== null ? "'$tipo_pessoa'" : "NULL") . ",
             '$endereco', '$complemento', '$bairro', '$cidade', '$uf', '$cep', '$pais', '$ddd', '$telefone1', '$telefone2',
             '$telefone3', '$whatsapp', '$email', '$cargo', '$vinculo', '$classificacao', " . ($status !== null ? "'$status'" : "NULL") . ",
-            'Calculador', '$tipo_interacao', " . ($data_interacao !== null ? "'$data_interacao'" : "NULL") . ",
+            'Calculador', " . ($tipo_interacao !== null ? "'$tipo_interacao'" : "NULL") . ", 
+            " . ($data_interacao !== null ? "'$data_interacao'" : "NULL") . ",
             '$observacoes', '$atividade', '$natureza_juridica',
             " . ($tipo_empresa !== null ? "'$tipo_empresa'" : "NULL") . ", " . ($mei !== null ? "'$mei'" : "NULL") . ",
             " . ($data_cadastro !== null ? "'$data_cadastro'" : "NULL") . ", '$website'
