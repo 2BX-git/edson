@@ -13,15 +13,15 @@ if ($conn->connect_error) {
     die("Erro ao conectar ao banco: " . $conn->connect_error);
 }
 
-// Função para escapar saída HTML
-function h($str) {
-    return htmlspecialchars($str, ENT_QUOTES, 'UTF-8');
+// Função segura para escapar saída HTML
+function h(?string $str): string {
+    return htmlspecialchars((string)$str, ENT_QUOTES, 'UTF-8');
 }
 
 // Login
 if (isset($_POST['login'])) {
-    $username = $_POST['username'];
-    $password = $_POST['password'];
+    $username = $_POST['username'] ?? '';
+    $password = $_POST['password'] ?? '';
 
     // Simulação de login (pode ser substituído por consulta a um banco de usuários)
     if ($username === 'admin' && $password === '1234') {
@@ -41,11 +41,11 @@ if (isset($_GET['logout'])) {
 // Salvar Contato
 if (isset($_POST['save_contact'])) {
     $id = intval($_POST['id']);
-    $nome = $conn->real_escape_string($_POST['nome']);
-    $email = $conn->real_escape_string($_POST['email']);
-    $telefone1 = $conn->real_escape_string($_POST['telefone1']);
-    $empresa_id = $conn->real_escape_string($_POST['empresa_id']);
-    $observacoes = $conn->real_escape_string($_POST['observacoes']);
+    $nome = $conn->real_escape_string($_POST['nome'] ?? '');
+    $email = $conn->real_escape_string($_POST['email'] ?? '');
+    $telefone1 = $conn->real_escape_string($_POST['telefone1'] ?? '');
+    $empresa_id = $conn->real_escape_string($_POST['empresa_id'] ?? '');
+    $observacoes = $conn->real_escape_string($_POST['observacoes'] ?? '');
 
     if ($id > 0) {
         $sql = "UPDATE tabela_principal SET 
@@ -53,8 +53,8 @@ if (isset($_POST['save_contact'])) {
             empresa_id='$empresa_id', observacoes='$observacoes'
             WHERE id=$id";
     } else {
-        $sql = "INSERT INTO tabela_principal (nome, email, telefone1, empresa_id, observacoes)
-                VALUES ('$nome', '$email', '$telefone1', '$empresa_id', '$observacoes')";
+        $sql = "INSERT INTO tabela_principal (nome, email, telefone1, empresa_id, observacoes, origem)
+                VALUES ('$nome', '$email', '$telefone1', '$empresa_id', '$observacoes', 'Calculador')";
     }
 
     $conn->query($sql);
@@ -101,7 +101,7 @@ if (isset($_GET['delete'])) {
         </form>
     <?php else: ?>
         <div class="d-flex justify-content-between align-items-center mb-4">
-            <h2>Contatos</h2>
+            <h2>Contatos - Apenas Calculador</h2>
             <a href="?logout" class="btn btn-secondary">Sair</a>
         </div>
 
@@ -115,9 +115,13 @@ if (isset($_GET['delete'])) {
             </thead>
             <tbody>
                 <?php
-                $result = $conn->query("SELECT id, nome, empresa_id, email, telefone1 FROM tabela_principal");
-                while ($row = $result->fetch_assoc()):
-                ?>
+                $result = $conn->query("SELECT id, nome, empresa_id, email, telefone1 FROM tabela_principal WHERE origem = 'Calculador'");
+                if ($result->num_rows === 0): ?>
+                    <tr>
+                        <td colspan="6" class="text-center">Nenhum contato encontrado.</td>
+                    </tr>
+                <?php endif; ?>
+                <?php while ($row = $result->fetch_assoc()): ?>
                     <tr>
                         <td><?= h($row['id']) ?></td>
                         <td><?= h($row['nome']) ?></td>
@@ -147,10 +151,11 @@ if (isset($_GET['delete'])) {
                 <div class="modal-content">
                     <div class="modal-header">
                         <h5 class="modal-title"><?= $contact ? 'Editar Contato' : 'Novo Contato' ?></h5>
+                        <a href="." class="btn-close" aria-label="Close"></a>
                     </div>
                     <div class="modal-body">
                         <form method="post">
-                            <input type="hidden" name="id" value="<?= $contact['id'] ?? '' ?>">
+                            <input type="hidden" name="id" value="<?= h($contact['id'] ?? '') ?>">
                             <div class="row">
                                 <div class="col-md-6 mb-3">
                                     <label>Nome</label>
