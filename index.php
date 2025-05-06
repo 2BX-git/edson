@@ -1,4 +1,7 @@
 <?php
+// Inicialize a sessão no topo
+session_start();
+
 // Configurações do Banco
 $host = "188.245.217.172";
 $user = "root";
@@ -15,9 +18,44 @@ function h(?string $str): string {
     return htmlspecialchars((string)$str, ENT_QUOTES, 'UTF-8');
 }
 
+// Defina todas as variáveis no início para evitar "undefined variable"
+$id = 0;
+$nome = '';
+$razao_social = '';
+$nome_fantasia = '';
+$cnpj = '';
+$cpf = '';
+$tipo_pessoa = null;
+$endereco = '';
+$complemento = '';
+$bairro = '';
+$cidade = '';
+$uf = '';
+$cep = '';
+$pais = '';
+$ddd = '';
+$telefone1 = '';
+$telefone2 = '';
+$telefone3 = '';
+$whatsapp = '';
+$email = '';
+$cargo = '';
+$vinculo = '';
+$classificacao = '';
+$status = null;
+$tipo_interacao = null; // ✅ Correção: esta linha faltava
+$data_interacao = null;
+$observacoes = '';
+$atividade = '';
+$natureza_juridica = '';
+$tipo_empresa = null;
+$mei = null;
+$data_cadastro = null;
+$website = '';
+
 // Salvar Contato
 if (isset($_POST['save_contact'])) {
-    // Validação dos campos ENUM (agora aceita nulo)
+    // Validação dos campos ENUM
     $tipo_pessoa_validos = ['fisica', 'juridica'];
     $status_validos = ['ativo', 'inativo', 'bloqueado'];
     $tipo_empresa_validos = ['matriz', 'filial'];
@@ -112,68 +150,22 @@ if (isset($_POST['save_contact'])) {
     <meta charset="UTF-8">
     <title>CRM - Calculador</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
-
-    <!-- Bootstrap CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
 
     <style>
-        body {
-            background-color: #f8f9fa;
-            font-family: 'Segoe UI', sans-serif;
-        }
-
-        .header-title {
-            font-size: 1.75rem;
-            font-weight: 600;
-            color: #343a40;
-        }
-
-        .card {
-            border: none;
-            box-shadow: 0 0.15rem 1.25rem rgba(0, 0, 0, 0.05);
-        }
-
-        .table th, .table td {
-            vertical-align: middle;
-        }
-
-        .required::after {
-            color: red;
-            content: " *";
-        }
-
-        footer {
-            margin-top: 60px;
-            text-align: center;
-            font-size: 0.85rem;
-            color: #888;
-        }
-
-        /* Paginação responsiva */
-        .pagination-responsive {
-            flex-wrap: wrap;
-            justify-content: center;
-            gap: 0.25rem;
-        }
-
-        .pagination-responsive .page-item {
-            flex: 1 1 auto;
-            max-width: 60px;
-            text-align: center;
-        }
-
-        .pagination-responsive .page-link {
-            padding: 0.375rem 0.5rem;
-            font-size: 0.875rem;
-        }
-
+        body { background-color: #f8f9fa; font-family: 'Segoe UI', sans-serif; }
+        .header-title { font-size: 1.75rem; font-weight: 600; color: #343a40; }
+        .card { border: none; box-shadow: 0 0.15rem 1.25rem rgba(0, 0, 0, 0.05); }
+        .table th, .table td { vertical-align: middle; }
+        .required::after { color: red; content: " *"; }
+        footer { margin-top: 60px; text-align: center; font-size: 0.85rem; color: #888; }
+        .pagination-responsive { flex-wrap: wrap; justify-content: center; gap: 0.25rem; }
+        .pagination-responsive .page-item { flex: 1 1 auto; max-width: 60px; text-align: center; }
+        .pagination-responsive .page-link { padding: 0.375rem 0.5rem; font-size: 0.875rem; }
         @media (max-width: 576px) {
             .pagination-responsive .page-item:not(:first-child):not(:last-child) { display: none; }
-            .pagination-responsive .page-item:nth-child(2), 
-            .pagination-responsive .page-item:nth-last-child(2) { display: block; }
-            .pagination-responsive .page-item.active, 
-            .pagination-responsive .page-item:first-child, 
-            .pagination-responsive .page-item:last-child { display: block; }
+            .pagination-responsive .page-item:nth-child(2), .pagination-responsive .page-item:nth-last-child(2) { display: block; }
+            .pagination-responsive .page-item.active, .pagination-responsive .page-item:first-child, .pagination-responsive .page-item:last-child { display: block; }
         }
     </style>
 </head>
@@ -209,13 +201,7 @@ if (isset($_POST['save_contact'])) {
                 <table class="table table-hover align-middle mb-0">
                     <thead class="table-light">
                         <tr>
-                            <th>ID</th>
-                            <th>Nome</th>
-                            <th>Razão Social</th>
-                            <th>Email</th>
-                            <th>Telefone</th>
-                            <th>Origem</th>
-                            <th>Ações</th>
+                            <th>ID</th><th>Nome</th><th>Razão Social</th><th>Email</th><th>Telefone</th><th>Origem</th><th>Ações</th>
                         </tr>
                     </thead>
                     <tbody>
