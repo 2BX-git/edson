@@ -18,18 +18,6 @@ function h(?string $str): string {
     return htmlspecialchars((string)$str, ENT_QUOTES, 'UTF-8');
 }
 
-// Login
-if (isset($_POST['login'])) {
-    $username = $_POST['username'] ?? '';
-    $password = $_POST['password'] ?? '';
-
-    if ($username === 'admin' && $password === '1234') {
-        $_SESSION['logged_in'] = true;
-    } else {
-        $loginError = "Login inválido.";
-    }
-}
-
 // Logout
 if (isset($_GET['logout'])) {
     session_destroy();
@@ -37,97 +25,70 @@ if (isset($_GET['logout'])) {
     exit;
 }
 
-// Salvar Contato
-if (isset($_POST['save_contact'])) {
-    // Validação dos campos ENUM
-    $tipo_pessoa_validos = ['fisica', 'juridica'];
-    $status_validos = ['ativo', 'inativo', 'bloqueado'];
-    $tipo_empresa_validos = ['matriz', 'filial'];
-    $mei_validos = ['sim', 'nao'];
+// Login
+if (isset($_POST['login'])) {
+    $username = $_POST['username'] ?? '';
+    $password = $_POST['password'] ?? '';
 
-    $id = intval($_POST['id']);
-    $nome = $conn->real_escape_string($_POST['nome'] ?? '');
-    $razao_social = $conn->real_escape_string($_POST['razao_social'] ?? '');
-    $nome_fantasia = $conn->real_escape_string($_POST['nome_fantasia'] ?? '');
-    $cnpj = $conn->real_escape_string($_POST['cnpj'] ?? '');
-    $cpf = $conn->real_escape_string($_POST['cpf'] ?? '');
-    $tipo_pessoa = in_array($_POST['tipo_pessoa'], $tipo_pessoa_validos) ? $_POST['tipo_pessoa'] : null;
-    $endereco = $conn->real_escape_string($_POST['endereco'] ?? '');
-    $complemento = $conn->real_escape_string($_POST['complemento'] ?? '');
-    $bairro = $conn->real_escape_string($_POST['bairro'] ?? '');
-    $cidade = $conn->real_escape_string($_POST['cidade'] ?? '');
-    $uf = $conn->real_escape_string($_POST['uf'] ?? '');
-    $cep = $conn->real_escape_string($_POST['cep'] ?? '');
-    $pais = $conn->real_escape_string($_POST['pais'] ?? '');
-    $ddd = $conn->real_escape_string($_POST['ddd'] ?? '');
-    $telefone1 = $conn->real_escape_string($_POST['telefone1'] ?? '');
-    $telefone2 = $conn->real_escape_string($_POST['telefone2'] ?? '');
-    $telefone3 = $conn->real_escape_string($_POST['telefone3'] ?? '');
-    $whatsapp = $conn->real_escape_string($_POST['whatsapp'] ?? '');
-    $email = $conn->real_escape_string($_POST['email'] ?? '');
-    $cargo = $conn->real_escape_string($_POST['cargo'] ?? '');
-    $vinculo = $conn->real_escape_string($_POST['vinculo'] ?? '');
-    $classificacao = $conn->real_escape_string($_POST['classificacao'] ?? '');
-    $status = in_array($_POST['status'], $status_validos) ? $_POST['status'] : null;
-    $origem = 'Calculador';
-    $tipo_interacao = $conn->real_escape_string($_POST['tipo_interacao'] ?? '');
-    $data_interacao = $conn->real_escape_string($_POST['data_interacao'] ?? '');
-    $observacoes = $conn->real_escape_string($_POST['observacoes'] ?? '');
-    $atividade = $conn->real_escape_string($_POST['atividade'] ?? '');
-    $natureza_juridica = $conn->real_escape_string($_POST['natureza_juridica'] ?? '');
-    $tipo_empresa = in_array($_POST['tipo_empresa'], $tipo_empresa_validos) ? $_POST['tipo_empresa'] : null;
-    $mei = in_array($_POST['mei'], $mei_validos) ? $_POST['mei'] : null;
-    $data_cadastro = $conn->real_escape_string($_POST['data_cadastro'] ?? '');
-    $website = $conn->real_escape_string($_POST['website'] ?? '');
-
-    if (!$tipo_pessoa || !$status || !$tipo_empresa || !$mei) {
-        die("Valores inválidos nos campos de seleção.");
+    $stmt = $conn->prepare("SELECT id, username, password_hash, tipo FROM usuarios WHERE username = ?");
+    $stmt->bind_param("s", $username);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    if ($user = $result->fetch_assoc()) {
+        if (password_verify($password, $user['password_hash'])) {
+            $_SESSION['user_id'] = $user['id'];
+            $_SESSION['username'] = $user['username'];
+            $_SESSION['tipo'] = $user['tipo'];
+            header("Location: crm.php");
+            exit;
+        }
     }
-
-    if ($id > 0) {
-        $sql = "UPDATE tabela_principal SET 
-            nome='$nome', razao_social='$razao_social', nome_fantasia='$nome_fantasia',
-            cnpj='$cnpj', cpf='$cpf', tipo_pessoa='$tipo_pessoa', endereco='$endereco',
-            complemento='$complemento', bairro='$bairro', cidade='$cidade', uf='$uf',
-            cep='$cep', pais='$pais', ddd='$ddd', telefone1='$telefone1', telefone2='$telefone2',
-            telefone3='$telefone3', whatsapp='$whatsapp', email='$email', cargo='$cargo',
-            vinculo='$vinculo', classificacao='$classificacao', status='$status',
-            origem='Calculador', tipo_interacao='$tipo_interacao', data_interacao='$data_interacao',
-            observacoes='$observacoes', atividade='$atividade', natureza_juridica='$natureza_juridica',
-            tipo_empresa='$tipo_empresa', mei='$mei', data_cadastro='$data_cadastro', website='$website'
-            WHERE id=$id";
-    } else {
-        $sql = "INSERT INTO tabela_principal (
-            nome, razao_social, nome_fantasia, cnpj, cpf, tipo_pessoa, endereco,
-            complemento, bairro, cidade, uf, cep, pais, ddd, telefone1, telefone2,
-            telefone3, whatsapp, email, cargo, vinculo, classificacao, status,
-            origem, tipo_interacao, data_interacao, observacoes, atividade,
-            natureza_juridica, tipo_empresa, mei, data_cadastro, website
-        ) VALUES (
-            '$nome', '$razao_social', '$nome_fantasia', '$cnpj', '$cpf', '$tipo_pessoa', '$endereco',
-            '$complemento', '$bairro', '$cidade', '$uf', '$cep', '$pais', '$ddd', '$telefone1', '$telefone2',
-            '$telefone3', '$whatsapp', '$email', '$cargo', '$vinculo', '$classificacao', '$status',
-            'Calculador', '$tipo_interacao', '$data_interacao', '$observacoes', '$atividade',
-            '$natureza_juridica', '$tipo_empresa', '$mei', '$data_cadastro', '$website'
-        )";
-    }
-
-    if ($conn->query($sql)) {
-        header("Location: crm.php?saved=1");
-        exit;
-    } else {
-        die("Erro ao salvar contato: " . $conn->error);
-    }
+    $loginError = "Login inválido.";
 }
 
-// Deletar Contato
-if (isset($_GET['delete'])) {
-    $id = intval($_GET['delete']);
-    $conn->query("DELETE FROM tabela_principal WHERE id=$id");
-    header("Location: crm.php");
-    exit;
-}
+// Verifica se o usuário está logado
+if (!isset($_SESSION['user_id'])):
 ?>
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <title>Login - CRM Calculador</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body { background-color: #f1f3f6; font-family: 'Segoe UI', sans-serif; }
+    </style>
+</head>
+<body>
+
+<div class="container d-flex align-items-center justify-content-center" style="height: 100vh;">
+    <div class="card shadow-sm w-100" style="max-width: 400px;">
+        <div class="card-header text-center">
+            <h4>Login - CRM Calculador</h4>
+        </div>
+        <div class="card-body">
+            <?php if (isset($loginError)): ?>
+                <div class="alert alert-danger"><?= h($loginError) ?></div>
+            <?php endif; ?>
+            <form method="post">
+                <div class="mb-3">
+                    <label class="form-label">Usuário</label>
+                    <input type="text" name="username" class="form-control" required>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Senha</label>
+                    <input type="password" name="password" class="form-control" required>
+                </div>
+                <button type="submit" name="login" class="btn btn-primary w-100">Entrar</button>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
+<?php exit; endif; ?>
 
 <!DOCTYPE html>
 <html lang="pt-BR">
@@ -137,140 +98,117 @@ if (isset($_GET['delete'])) {
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
         body { background-color: #f1f3f6; font-family: 'Segoe UI', sans-serif; }
-        .sidebar { width: 250px; background-color: #212529; height: 100vh; position: fixed; top: 0; left: 0; padding-top: 20px; }
+        .sidebar { width: 250px; background-color: #212529; height: 100vh; position: fixed; top: 0; left: 0; padding-top: 20px; color: white; }
         .content { margin-left: 250px; padding: 30px; }
         .card { box-shadow: 0 0.15rem 1.75rem rgba(58,59,69,.15); border: none; }
-        .form-control-sm { font-size: 0.875rem; }
         .table thead th { vertical-align: middle; font-weight: 600; background-color: #e9ecef; }
         footer { margin-top: 50px; text-align: center; color: #888; font-size: 0.9rem; }
+        .required::after { color: red; content: " *"; }
     </style>
 </head>
 <body>
 
-<?php if (isset($_SESSION['logged_in'])): ?>
-    <!-- Sidebar -->
-    <div class="sidebar text-white">
-        <h5 class="text-center text-white mb-4">CRM - Calculador</h5>
-        <ul class="nav flex-column px-3">
-            <li class="nav-item"><a href="crm.php" class="nav-link text-white">Contatos</a></li>
-            <li class="nav-item"><a href="?new" class="nav-link text-white">+ Novo Contato</a></li>
-            <li class="nav-item"><a href="?logout" class="nav-link text-white">Sair</a></li>
-        </ul>
-    </div>
+<!-- Sidebar -->
+<div class="sidebar text-white">
+    <h5 class="text-center mb-4">CRM - Calculador</h5>
+    <ul class="nav flex-column px-3">
+        <li class="nav-item"><a href="crm.php" class="nav-link text-white">Contatos</a></li>
+        <li class="nav-item"><a href="?new" class="nav-link text-white">+ Novo Contato</a></li>
+        <li class="nav-item"><a href="?logout" class="nav-link text-white">Sair</a></li>
+    </ul>
+</div>
 
-    <!-- Conteúdo Principal -->
-    <div class="content">
-        <h2 class="mb-4">Clientes</h2>
+<!-- Conteúdo Principal -->
+<div class="content">
+    <h2 class="mb-4">Clientes</h2>
 
-        <!-- Filtros -->
-        <form method="get" class="row g-2 mb-3">
-            <div class="col-md-3">
-                <input type="text" name="nome" class="form-control form-control-sm" placeholder="Nome" value="<?= h($_GET['nome'] ?? '') ?>">
-            </div>
-            <div class="col-md-3">
-                <input type="text" name="email" class="form-control form-control-sm" placeholder="Email" value="<?= h($_GET['email'] ?? '') ?>">
-            </div>
-            <div class="col-md-3">
-                <input type="text" name="empresa" class="form-control form-control-sm" placeholder="Empresa" value="<?= h($_GET['empresa'] ?? '') ?>">
-            </div>
-            <div class="col-md-3">
-                <button type="submit" class="btn btn-primary btn-sm w-100">Filtrar</button>
-            </div>
-        </form>
+    <!-- Filtros -->
+    <form method="get" class="row g-2 mb-3">
+        <div class="col-md-3">
+            <input type="text" name="nome" class="form-control form-control-sm" placeholder="Nome" value="<?= h($_GET['nome'] ?? '') ?>">
+        </div>
+        <div class="col-md-3">
+            <input type="text" name="email" class="form-control form-control-sm" placeholder="Email" value="<?= h($_GET['email'] ?? '') ?>">
+        </div>
+        <div class="col-md-3">
+            <input type="text" name="empresa" class="form-control form-control-sm" placeholder="Empresa" value="<?= h($_GET['empresa'] ?? '') ?>">
+        </div>
+        <div class="col-md-3">
+            <button type="submit" class="btn btn-primary btn-sm w-100">Filtrar</button>
+        </div>
+    </form>
 
-        <!-- Tabela -->
-        <div class="card shadow-sm">
-            <div class="card-body p-0">
-                <div class="table-responsive">
-                    <table class="table table-hover align-middle mb-0">
-                        <thead>
-                            <tr>
-                                <th>ID</th><th>Nome</th><th>Razão Social</th><th>Email</th><th>Telefone</th><th>Ações</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <?php
-                            // Filtros
-                            $where = [];
-                            if (!empty($_GET['nome'])) $where[] = "nome LIKE '%" . $conn->real_escape_string($_GET['nome']) . "%'";
-                            if (!empty($_GET['email'])) $where[] = "email LIKE '%" . $conn->real_escape_string($_GET['email']) . "%'";
-                            if (!empty($_GET['empresa'])) $where[] = "razao_social LIKE '%" . $conn->real_escape_string($_GET['empresa']) . "%' OR nome_fantasia LIKE '%" . $conn->real_escape_string($_GET['empresa']) . "%'";
+    <!-- Tabela -->
+    <div class="card shadow-sm">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead>
+                        <tr>
+                            <th>ID</th><th>Nome</th><th>Razão Social</th><th>Email</th><th>Telefone</th><th>Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php
+                        // Filtros
+                        $where = [];
+                        if (!empty($_GET['nome'])) $where[] = "nome LIKE '%" . $conn->real_escape_string($_GET['nome']) . "%'";
+                        if (!empty($_GET['email'])) $where[] = "email LIKE '%" . $conn->real_escape_string($_GET['email']) . "%'";
+                        if (!empty($_GET['empresa'])) $where[] = "razao_social LIKE '%" . $conn->real_escape_string($_GET['empresa']) . "%' OR nome_fantasia LIKE '%" . $conn->real_escape_string($_GET['empresa']) . "%'";
+
+                        // Apenas operador tem filtro por origem
+                        if ($_SESSION['tipo'] === 'operador') {
                             $where[] = "origem = 'Calculador'";
+                        }
 
-                            $whereClause = implode(' AND ', $where);
-                            $pagina = isset($_GET['pagina']) ? max(1, intval($_GET['pagina'])) : 1;
-                            $por_pagina = 10;
-                            $offset = ($pagina - 1) * $por_pagina;
+                        $whereClause = implode(' AND ', $where);
+                        $pagina = isset($_GET['pagina']) ? max(1, intval($_GET['pagina'])) : 1;
+                        $por_pagina = 10;
+                        $offset = ($pagina - 1) * $por_pagina;
 
-                            $total_sql = "SELECT COUNT(*) FROM tabela_principal WHERE $whereClause";
-                            $total_res = $conn->query($total_sql);
-                            $total = $total_res->fetch_row()[0];
+                        $total_sql = "SELECT COUNT(*) FROM tabela_principal" . ($whereClause ? " WHERE $whereClause" : "");
+                        $total_res = $conn->query($total_sql);
+                        $total = $total_res->fetch_row()[0];
 
-                            $sql = "SELECT id, nome, razao_social, email, telefone1 FROM tabela_principal WHERE $whereClause LIMIT $offset, $por_pagina";
-                            $result = $conn->query($sql);
+                        $sql = "SELECT id, nome, razao_social, email, telefone1 FROM tabela_principal" . ($whereClause ? " WHERE $whereClause" : "") . " LIMIT $offset, $por_pagina";
+                        $result = $conn->query($sql);
 
-                            if ($result->num_rows === 0): ?>
-                                <tr><td colspan="6" class="text-center py-4">Nenhum contato encontrado.</td></tr>
-                            <?php endif; ?>
+                        if ($result->num_rows === 0): ?>
+                            <tr><td colspan="6" class="text-center py-4">Nenhum contato encontrado.</td></tr>
+                        <?php endif; ?>
 
-                            <?php while ($row = $result->fetch_assoc()): ?>
-                                <tr>
-                                    <td><?= h($row['id']) ?></td>
-                                    <td><?= h($row['nome']) ?></td>
-                                    <td><?= h($row['razao_social']) ?></td>
-                                    <td><?= h($row['email']) ?></td>
-                                    <td><?= h($row['telefone1']) ?></td>
-                                    <td class="text-end pe-3">
-                                        <a href="?edit=<?= $row['id'] ?>" class="btn btn-sm btn-outline-primary me-1">Editar</a>
-                                        <a href="?delete=<?= $row['id'] ?>" onclick="return confirm('Tem certeza?')" class="btn btn-sm btn-outline-danger">Excluir</a>
-                                    </td>
-                                </tr>
-                            <?php endwhile; ?>
-                        </tbody>
-                    </table>
-                </div>
-
-                <!-- Paginação -->
-                <nav class="mt-3 me-3 ms-auto w-100">
-                    <ul class="pagination justify-content-end mb-0">
-                        <?php for ($i = 1; $i <= ceil($total / $por_pagina); $i++): ?>
-                            <li class="page-item <?= $pagina == $i ? 'active' : '' ?>">
-                                <a class="page-link" href="?<?= http_build_query(array_merge($_GET, ['pagina' => $i])) ?>"><?= $i ?></a>
-                            </li>
-                        <?php endfor; ?>
-                    </ul>
-                </nav>
+                        <?php while ($row = $result->fetch_assoc()): ?>
+                            <tr>
+                                <td><?= h($row['id']) ?></td>
+                                <td><?= h($row['nome']) ?></td>
+                                <td><?= h($row['razao_social']) ?></td>
+                                <td><?= h($row['email']) ?></td>
+                                <td><?= h($row['telefone1']) ?></td>
+                                <td class="text-end pe-3">
+                                    <a href="?edit=<?= $row['id'] ?>" class="btn btn-sm btn-outline-primary me-1">Editar</a>
+                                    <a href="?delete=<?= $row['id'] ?>" onclick="return confirm('Tem certeza?')" class="btn btn-sm btn-outline-danger">Excluir</a>
+                                </td>
+                            </tr>
+                        <?php endwhile; ?>
+                    </tbody>
+                </table>
             </div>
-        </div>
 
-        <footer>&copy; 2025 CRM Calculador</footer>
-    </div>
-<?php else: ?>
-    <!-- Login -->
-    <div class="container d-flex align-items-center justify-content-center" style="height: 100vh;">
-        <div class="card shadow-sm w-100" style="max-width: 400px;">
-            <div class="card-header text-center">
-                <h4>Login</h4>
-            </div>
-            <div class="card-body">
-                <?php if (isset($loginError)): ?>
-                    <div class="alert alert-danger"><?= h($loginError) ?></div>
-                <?php endif; ?>
-                <form method="post">
-                    <div class="mb-3">
-                        <label class="form-label">Usuário</label>
-                        <input type="text" name="username" class="form-control" required>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">Senha</label>
-                        <input type="password" name="password" class="form-control" required>
-                    </div>
-                    <button type="submit" name="login" class="btn btn-primary w-100">Entrar</button>
-                </form>
-            </div>
+            <!-- Paginação -->
+            <nav class="mt-3 me-3 ms-auto w-100">
+                <ul class="pagination justify-content-end mb-0">
+                    <?php for ($i = 1; $i <= ceil($total / $por_pagina); $i++): ?>
+                        <li class="page-item <?= $pagina == $i ? 'active' : '' ?>">
+                            <a class="page-link" href="?<?= http_build_query(array_merge($_GET, ['pagina' => $i])) ?>"><?= $i ?></a>
+                        </li>
+                    <?php endfor; ?>
+                </ul>
+            </nav>
         </div>
     </div>
-<?php endif; ?>
+
+    <footer>&copy; 2025 CRM Calculador</footer>
+</div>
 
 <!-- Modal Edição -->
 <?php if (isset($_GET['edit']) || isset($_GET['new'])):
@@ -293,7 +231,7 @@ if (isset($_GET['delete'])) {
 
                     <div class="row g-3">
                         <div class="col-md-6">
-                            <label>Nome</label>
+                            <label class="required">Nome</label>
                             <input type="text" name="nome" class="form-control" value="<?= h($contact['nome'] ?? '') ?>" required>
                         </div>
                         <div class="col-md-6">
@@ -313,7 +251,7 @@ if (isset($_GET['delete'])) {
                             <input type="text" name="cpf" class="form-control" value="<?= h($contact['cpf'] ?? '') ?>">
                         </div>
                         <div class="col-md-6">
-                            <label>Tipo de Pessoa</label>
+                            <label class="required">Tipo de Pessoa</label>
                             <select name="tipo_pessoa" class="form-control" required>
                                 <option value="">Selecione</option>
                                 <option value="fisica" <?= (h($contact['tipo_pessoa'] ?? '') === 'fisica') ? 'selected' : '' ?>>Pessoa Física</option>
