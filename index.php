@@ -39,13 +39,19 @@ if (isset($_GET['logout'])) {
 
 // Salvar Contato
 if (isset($_POST['save_contact'])) {
+    // Validação dos campos ENUM
+    $tipo_pessoa_validos = ['fisica', 'juridica'];
+    $status_validos = ['ativo', 'inativo', 'bloqueado'];
+    $tipo_empresa_validos = ['matriz', 'filial'];
+    $mei_validos = ['sim', 'nao'];
+
     $id = intval($_POST['id']);
     $nome = $conn->real_escape_string($_POST['nome'] ?? '');
     $razao_social = $conn->real_escape_string($_POST['razao_social'] ?? '');
     $nome_fantasia = $conn->real_escape_string($_POST['nome_fantasia'] ?? '');
     $cnpj = $conn->real_escape_string($_POST['cnpj'] ?? '');
     $cpf = $conn->real_escape_string($_POST['cpf'] ?? '');
-    $tipo_pessoa = $conn->real_escape_string($_POST['tipo_pessoa'] ?? '');
+    $tipo_pessoa = in_array($_POST['tipo_pessoa'], $tipo_pessoa_validos) ? $_POST['tipo_pessoa'] : null;
     $endereco = $conn->real_escape_string($_POST['endereco'] ?? '');
     $complemento = $conn->real_escape_string($_POST['complemento'] ?? '');
     $bairro = $conn->real_escape_string($_POST['bairro'] ?? '');
@@ -62,17 +68,21 @@ if (isset($_POST['save_contact'])) {
     $cargo = $conn->real_escape_string($_POST['cargo'] ?? '');
     $vinculo = $conn->real_escape_string($_POST['vinculo'] ?? '');
     $classificacao = $conn->real_escape_string($_POST['classificacao'] ?? '');
-    $status = $conn->real_escape_string($_POST['status'] ?? '');
+    $status = in_array($_POST['status'], $status_validos) ? $_POST['status'] : null;
     $origem = 'Calculador';
     $tipo_interacao = $conn->real_escape_string($_POST['tipo_interacao'] ?? '');
     $data_interacao = $conn->real_escape_string($_POST['data_interacao'] ?? '');
     $observacoes = $conn->real_escape_string($_POST['observacoes'] ?? '');
     $atividade = $conn->real_escape_string($_POST['atividade'] ?? '');
     $natureza_juridica = $conn->real_escape_string($_POST['natureza_juridica'] ?? '');
-    $tipo_empresa = $conn->real_escape_string($_POST['tipo_empresa'] ?? '');
-    $mei = $conn->real_escape_string($_POST['mei'] ?? '');
+    $tipo_empresa = in_array($_POST['tipo_empresa'], $tipo_empresa_validos) ? $_POST['tipo_empresa'] : null;
+    $mei = in_array($_POST['mei'], $mei_validos) ? $_POST['mei'] : null;
     $data_cadastro = $conn->real_escape_string($_POST['data_cadastro'] ?? '');
     $website = $conn->real_escape_string($_POST['website'] ?? '');
+
+    if (!$tipo_pessoa || !$status || !$tipo_empresa || !$mei) {
+        die("Valores inválidos nos campos de seleção.");
+    }
 
     if ($id > 0) {
         $sql = "UPDATE tabela_principal SET 
@@ -102,9 +112,12 @@ if (isset($_POST['save_contact'])) {
         )";
     }
 
-    $conn->query($sql);
-    header("Location: crm.php?saved=1");
-    exit;
+    if ($conn->query($sql)) {
+        header("Location: crm.php?saved=1");
+        exit;
+    } else {
+        die("Erro ao salvar contato: " . $conn->error);
+    }
 }
 
 // Deletar Contato
@@ -301,7 +314,11 @@ if (isset($_GET['delete'])) {
                         </div>
                         <div class="col-md-6">
                             <label>Tipo de Pessoa</label>
-                            <input type="text" name="tipo_pessoa" class="form-control" value="<?= h($contact['tipo_pessoa'] ?? '') ?>">
+                            <select name="tipo_pessoa" class="form-control" required>
+                                <option value="">Selecione</option>
+                                <option value="fisica" <?= (h($contact['tipo_pessoa'] ?? '') === 'fisica') ? 'selected' : '' ?>>Pessoa Física</option>
+                                <option value="juridica" <?= (h($contact['tipo_pessoa'] ?? '') === 'juridica') ? 'selected' : '' ?>>Pessoa Jurídica</option>
+                            </select>
                         </div>
                         <div class="col-md-6">
                             <label>Endereço</label>
@@ -369,7 +386,12 @@ if (isset($_GET['delete'])) {
                         </div>
                         <div class="col-md-6">
                             <label>Status</label>
-                            <input type="text" name="status" class="form-control" value="<?= h($contact['status'] ?? '') ?>">
+                            <select name="status" class="form-control">
+                                <option value="">Selecione</option>
+                                <option value="ativo" <?= (h($contact['status'] ?? '') === 'ativo') ? 'selected' : '' ?>>Ativo</option>
+                                <option value="inativo" <?= (h($contact['status'] ?? '') === 'inativo') ? 'selected' : '' ?>>Inativo</option>
+                                <option value="bloqueado" <?= (h($contact['status'] ?? '') === 'bloqueado') ? 'selected' : '' ?>>Bloqueado</option>
+                            </select>
                         </div>
                         <div class="col-md-6">
                             <label>Tipo de Interação</label>
@@ -393,11 +415,19 @@ if (isset($_GET['delete'])) {
                         </div>
                         <div class="col-md-6">
                             <label>Tipo de Empresa</label>
-                            <input type="text" name="tipo_empresa" class="form-control" value="<?= h($contact['tipo_empresa'] ?? '') ?>">
+                            <select name="tipo_empresa" class="form-control">
+                                <option value="">Selecione</option>
+                                <option value="matriz" <?= (h($contact['tipo_empresa'] ?? '') === 'matriz') ? 'selected' : '' ?>>Matriz</option>
+                                <option value="filial" <?= (h($contact['tipo_empresa'] ?? '') === 'filial') ? 'selected' : '' ?>>Filial</option>
+                            </select>
                         </div>
                         <div class="col-md-6">
                             <label>MEI</label>
-                            <input type="text" name="mei" class="form-control" value="<?= h($contact['mei'] ?? '') ?>">
+                            <select name="mei" class="form-control">
+                                <option value="">Selecione</option>
+                                <option value="sim" <?= (h($contact['mei'] ?? '') === 'sim') ? 'selected' : '' ?>>Sim</option>
+                                <option value="nao" <?= (h($contact['mei'] ?? '') === 'nao') ? 'selected' : '' ?>>Não</option>
+                            </select>
                         </div>
                         <div class="col-md-6">
                             <label>Data de Cadastro</label>
