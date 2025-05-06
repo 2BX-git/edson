@@ -1,29 +1,16 @@
 <?php
-// Ativa exibição de erros (útil para depuração)
 error_reporting(E_ALL);
 ini_set('display_errors', 1);
 
-// Inicia sessão
 session_start();
-
-// Função auxiliar para verificar acesso
-function usuario_tipo() {
-    return $_SESSION['usuario_tipo'] ?? null;
-}
-
-function autenticado() {
-    return isset($_SESSION['usuario']);
-}
-
-if (!autenticado()) {
-    header("Location: login.php");
-    exit();
-}
-
-// Carrega configurações do banco
 require_once 'config.php';
+require_once 'auth.php';
 
-// Variáveis para formulário
+verificar_acesso();
+
+$conn = new mysqli($host, $user, $pass, $dbname);
+
+// Variáveis do formulário
 $id = 0;
 $nome = $razao_social = $nome_fantasia = $cnpj = $cpf = $tipo_pessoa = '';
 $endereco = $complemento = $bairro = $cidade = $uf = $cep = $pais = '';
@@ -32,7 +19,7 @@ $cargo = $vinculo = $classificacao = $status = $tipo_interacao = '';
 $data_interacao = $observacoes = $atividade = $natureza_juridica = '';
 $tipo_empresa = $mei = $data_cadastro = $website = '';
 
-// Salvar Contato
+// Salvar contato
 if (isset($_POST['save_contact'])) {
     $id = intval($_POST['id']);
     $nome = $conn->real_escape_string($_POST['nome'] ?? '');
@@ -68,11 +55,8 @@ if (isset($_POST['save_contact'])) {
     $data_cadastro = $_POST['data_cadastro'] ?: null;
     $website = $conn->real_escape_string($_POST['website'] ?? '');
 
-    if (!$nome) {
-        die("O campo Nome é obrigatório.");
-    }
+    if (!$nome) die("O campo Nome é obrigatório.");
 
-    // Origem somente para admin
     $origem = usuario_tipo() === 'admin' ? $conn->real_escape_string($_POST['origem'] ?? '') : 'Calculador';
 
     if ($id > 0) {
@@ -105,7 +89,7 @@ if (isset($_POST['save_contact'])) {
             '$nome', '$razao_social', '$nome_fantasia', '$cnpj', '$cpf', " . ($tipo_pessoa ? "'$tipo_pessoa'" : "NULL") . ",
             '$endereco', '$complemento', '$bairro', '$cidade', '$uf', '$cep', '$pais', '$ddd', '$telefone1', '$telefone2',
             '$telefone3', '$whatsapp', '$email', '$cargo', '$vinculo', '$classificacao', " . ($status ? "'$status'" : "NULL") . ",
-            '$origem', " . ($tipo_interacao ? "'$tipo_interacao'" : "NULL") . ", 
+            '" . $origem . "', " . ($tipo_interacao ? "'$tipo_interacao'" : "NULL") . ", 
             " . ($data_interacao ? "'$data_interacao'" : "NULL") . ",
             '$observacoes', '$atividade', '$natureza_juridica',
             " . ($tipo_empresa ? "'$tipo_empresa'" : "NULL") . ", " . ($mei ? "'$mei'" : "NULL") . ",
@@ -121,7 +105,7 @@ if (isset($_POST['save_contact'])) {
     }
 }
 
-// Edição de registro
+// Edição
 if (isset($_GET['edit'])) {
     $id = intval($_GET['edit']);
     $sql = "SELECT * FROM tabela_principal WHERE id = $id";
@@ -136,7 +120,7 @@ if (isset($_GET['edit'])) {
     }
 }
 
-// Filtro de busca
+// Filtros
 $where = [];
 if (!empty($_GET['nome'])) $where[] = "nome LIKE '%" . $conn->real_escape_string($_GET['nome']) . "%'";
 if (!empty($_GET['email'])) $where[] = "email LIKE '%" . $conn->real_escape_string($_GET['email']) . "%'";
@@ -240,14 +224,66 @@ $result = $conn->query($sql);
                     </tbody>
                 </table>
             </div>
-            <!-- Paginação -->
+            <!-- Paginação Otimizada -->
             <nav class="mt-3 px-3 pb-3">
-                <ul class="pagination pagination-responsive justify-content-center flex-wrap">
-                    <?php for ($i = 1; $i <= ceil($total / $por_pagina); $i++): ?>
+                <ul class="pagination justify-content-center flex-wrap gap-1">
+                    <!-- Botão Primeira -->
+                    <?php if ($pagina > 1): ?>
+                        <li class="page-item">
+                            <a class="page-link" href="?<?= http_build_query(array_merge($_GET, ['pagina' => 1])) ?>">&laquo; Primeira</a>
+                        </li>
+                    <?php endif; ?>
+
+                    <!-- Botão Anterior -->
+                    <?php if ($pagina > 1): ?>
+                        <li class="page-item">
+                            <a class="page-link" href="?<?= http_build_query(array_merge($_GET, ['pagina' => $pagina - 1])) ?>">Anterior</a>
+                        </li>
+                    <?php endif; ?>
+
+                    <!-- Exibir páginas dinamicamente -->
+                    <?php
+                    $range = 2;
+                    $start = max(1, $pagina - $range);
+                    $end = min(ceil($total / $por_pagina), $pagina + $range);
+                    // Mostrar primeira página se fora do range
+                    if ($start > 1): ?>
+                        <li class="page-item"><a class="page-link" href="?<?= http_build_query(array_merge($_GET, ['pagina' => 1])) ?>">1</a></li>
+                        <?php if ($start > 2): ?>
+                            <li class="page-item disabled"><span class="page-link">...</span></li>
+                        <?php endif; ?>
+                    <?php endif; ?>
+
+                    <!-- Páginas dentro do range -->
+                    <?php for ($i = $start; $i <= $end; $i++): ?>
                         <li class="page-item <?= $pagina == $i ? 'active' : '' ?>">
                             <a class="page-link" href="?<?= http_build_query(array_merge($_GET, ['pagina' => $i])) ?>"><?= $i ?></a>
                         </li>
                     <?php endfor; ?>
+
+                    <!-- Mostrar última página se fora do range -->
+                    <?php if ($end < ceil($total / $por_pagina)): ?>
+                        <?php if ($end < ceil($total / $por_pagina) - 1): ?>
+                            <li class="page-item disabled"><span class="page-link">...</span></li>
+                        <?php endif; ?>
+                        <li class="page-item">
+                            <a class="page-link" href="?<?= http_build_query(array_merge($_GET, ['pagina' => ceil($total / $por_pagina)])) ?>"><?= ceil($total / $por_pagina) ?></a>
+                        </li>
+                    <?php endif; ?>
+
+                    <!-- Botão Próxima -->
+                    <?php if ($pagina < ceil($total / $por_pagina)): ?>
+                        <li class="page-item">
+                            <a class="page-link" href="?<?= http_build_query(array_merge($_GET, ['pagina' => $pagina + 1])) ?>">Próxima</a>
+                        </li>
+                    <?php endif; ?>
+
+                    <!-- Botão Última -->
+                    <?php if ($pagina < ceil($total / $por_pagina)): ?>
+                        <li class="page-item">
+                            <a class="page-link" href="?<?= http_build_query(array_merge($_GET, ['pagina' => ceil($total / $por_pagina)])) ?>">Última &raquo;</a>
+                        </li>
+                    <?php endif; ?>
                 </ul>
             </nav>
         </div>
