@@ -1,7 +1,7 @@
 <?php
 // auth.php
 
-session_start();
+//session_start();
 
 // Definição dos usuários com senhas HASHED mais seguras
 $usuarios = [
