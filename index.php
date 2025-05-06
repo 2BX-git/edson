@@ -100,14 +100,6 @@ if (isset($_POST['save_contact'])) {
         die("Erro ao salvar contato: " . $conn->error);
     }
 }
-
-// Deletar Contato
-if (isset($_GET['delete'])) {
-    $id = intval($_GET['delete']);
-    $conn->query("DELETE FROM tabela_principal WHERE id=$id");
-    header("Location: crm.php");
-    exit;
-}
 ?>
 <!DOCTYPE html>
 <html lang="pt-BR">
@@ -118,6 +110,7 @@ if (isset($_GET['delete'])) {
 
     <!-- Bootstrap CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+
     <style>
         body {
             background-color: #f8f9fa;
@@ -139,10 +132,6 @@ if (isset($_GET['delete'])) {
             vertical-align: middle;
         }
 
-        .form-control-sm {
-            font-size: 0.875rem;
-        }
-
         .required::after {
             color: red;
             content: " *";
@@ -155,16 +144,28 @@ if (isset($_GET['delete'])) {
             color: #888;
         }
 
-        @media (max-width: 768px) {
-            .d-md-flex {
-                display: flex !important;
-                flex-direction: column;
-            }
+        /* Paginação responsiva */
+        .pagination-responsive {
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 0.25rem;
+        }
 
-            .btn-group-sm {
-                display: grid;
-                gap: 0.5rem;
-            }
+        .pagination-responsive .page-item {
+            flex: 1 1 auto;
+            max-width: 60px;
+            text-align: center;
+        }
+
+        .pagination-responsive .page-link {
+            padding: 0.375rem 0.5rem;
+            font-size: 0.875rem;
+        }
+
+        @media (max-width: 576px) {
+            .pagination-responsive .page-item:not(:first-child):not(:last-child) { display: none; }
+            .pagination-responsive .page-item:nth-child(2), .pagination-responsive .page-item:nth-last-child(2) { display: block; }
+            .pagination-responsive .page-item.active, .pagination-responsive .page-item:first-child, .pagination-responsive .page-item:last-child { display: block; }
         }
     </style>
 </head>
@@ -172,23 +173,23 @@ if (isset($_GET['delete'])) {
 
 <div class="container py-4">
     <!-- Cabeçalho -->
-    <div class="d-flex justify-content-between align-items-center mb-4">
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center mb-4">
         <h1 class="header-title">Clientes - Calculador</h1>
-        <a href="?new" class="btn btn-success">+ Novo Contato</a>
+        <a href="?new" class="btn btn-success mt-2 mt-md-0">+ Novo Contato</a>
     </div>
 
     <!-- Filtros -->
     <form method="get" class="row g-3 mb-4">
-        <div class="col-md-3">
+        <div class="col-md-3 col-12">
             <input type="text" name="nome" class="form-control form-control-sm" placeholder="Nome" value="<?= h($_GET['nome'] ?? '') ?>">
         </div>
-        <div class="col-md-3">
+        <div class="col-md-3 col-12">
             <input type="text" name="email" class="form-control form-control-sm" placeholder="Email" value="<?= h($_GET['email'] ?? '') ?>">
         </div>
-        <div class="col-md-3">
+        <div class="col-md-3 col-12">
             <input type="text" name="empresa" class="form-control form-control-sm" placeholder="Empresa" value="<?= h($_GET['empresa'] ?? '') ?>">
         </div>
-        <div class="col-md-3 d-grid">
+        <div class="col-md-3 col-12 d-grid">
             <button type="submit" class="btn btn-primary btn-sm">Filtrar</button>
         </div>
     </form>
@@ -200,7 +201,13 @@ if (isset($_GET['delete'])) {
                 <table class="table table-hover align-middle mb-0">
                     <thead class="table-light">
                         <tr>
-                            <th>ID</th><th>Nome</th><th>Razão Social</th><th>Email</th><th>Telefone</th><th>Ações</th>
+                            <th>ID</th>
+                            <th>Nome</th>
+                            <th>Razão Social</th>
+                            <th>Email</th>
+                            <th>Telefone</th>
+                            <th>Origem</th>
+                            <th>Ações</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -219,15 +226,16 @@ if (isset($_GET['delete'])) {
 
                         $total_sql = "SELECT COUNT(*) FROM tabela_principal WHERE $whereClause";
                         $total_res = $conn->query($total_sql);
-                        $total = $total_res->fetch_row()[0];
+                        $total_row = $total_res->fetch_row();
+                        $total = $total_row[0];
 
-                        $sql = "SELECT id, nome, razao_social, email, telefone1 FROM tabela_principal WHERE $whereClause LIMIT $offset, $por_pagina";
+                        $sql = "SELECT id, nome, razao_social, email, telefone1, origem FROM tabela_principal WHERE $whereClause LIMIT $offset, $por_pagina";
                         $result = $conn->query($sql);
                         ?>
 
                         <?php if ($result->num_rows === 0): ?>
                             <tr>
-                                <td colspan="6" class="text-center py-4 text-muted">Nenhum contato encontrado.</td>
+                                <td colspan="7" class="text-center py-4 text-muted">Nenhum contato encontrado.</td>
                             </tr>
                         <?php endif; ?>
 
@@ -238,11 +246,9 @@ if (isset($_GET['delete'])) {
                                 <td><?= h($row['razao_social']) ?></td>
                                 <td><?= h($row['email']) ?></td>
                                 <td><?= h($row['telefone1']) ?></td>
+                                <td><?= h($row['origem']) ?></td>
                                 <td class="text-end pe-3">
-                                    <div class="btn-group btn-group-sm" role="group">
-                                        <a href="?edit=<?= $row['id'] ?>" class="btn btn-outline-primary">Editar</a>
-                                        <a href="?delete=<?= $row['id'] ?>" onclick="return confirm('Tem certeza?')" class="btn btn-outline-danger">Excluir</a>
-                                    </div>
+                                    <a href="?edit=<?= $row['id'] ?>" class="btn btn-outline-primary btn-sm w-100">Editar</a>
                                 </td>
                             </tr>
                         <?php endwhile; ?>
@@ -250,9 +256,9 @@ if (isset($_GET['delete'])) {
                 </table>
             </div>
 
-            <!-- Paginação -->
-            <nav class="mt-3 me-3 ms-auto w-100">
-                <ul class="pagination justify-content-end mb-0">
+            <!-- Paginação Responsiva -->
+            <nav class="mt-3 px-3 pb-3">
+                <ul class="pagination pagination-responsive justify-content-center flex-wrap">
                     <?php for ($i = 1; $i <= ceil($total / $por_pagina); $i++): ?>
                         <li class="page-item <?= $pagina == $i ? 'active' : '' ?>">
                             <a class="page-link" href="?<?= http_build_query(array_merge($_GET, ['pagina' => $i])) ?>"><?= $i ?></a>
@@ -308,8 +314,8 @@ if (isset($_GET['delete'])) {
                             <label class="form-label">Tipo de Pessoa</label>
                             <select name="tipo_pessoa" class="form-select">
                                 <option value="">Selecione</option>
-                                <option value="fisica" <?= (h($contact['tipo_pessoa'] ?? '') === 'fisica') ? 'selected' : '' ?>>Pessoa Física</option>
-                                <option value="juridica" <?= (h($contact['tipo_pessoa'] ?? '') === 'juridica') ? 'selected' : '' ?>>Pessoa Jurídica</option>
+                                <option value="fisica" <?= (h($contact['tipo_pessoa'] ?? '') === 'fisica' ? 'selected' : '' ?>>Pessoa Física</option>
+                                <option value="juridica" <?= (h($contact['tipo_pessoa'] ?? '') === 'juridica' ? 'selected' : '' ?>>Pessoa Jurídica</option>
                             </select>
                         </div>
                         <div class="col-md-6">
@@ -428,6 +434,10 @@ if (isset($_GET['delete'])) {
                         <div class="col-md-6">
                             <label class="form-label">Website</label>
                             <input type="url" name="website" class="form-control" value="<?= h($contact['website'] ?? '') ?>">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">Origem</label>
+                            <input type="text" class="form-control-plaintext" value="Calculador" readonly>
                         </div>
                     </div>
 
