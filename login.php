@@ -1,15 +1,15 @@
-<!-- login.php -->
 <?php
 require_once 'config.php';
+require_once 'auth.php';
 
 $msg = '';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $usuario = $_POST['usuario'] ?? '';
     $senha = $_POST['senha'] ?? '';
-    
+
     global $usuarios;
-    
+
     if (isset($usuarios[$usuario]) && password_verify($senha, $usuarios[$usuario]['senha'])) {
         $_SESSION['usuario'] = $usuario;
         $_SESSION['usuario_tipo'] = $usuarios[$usuario]['tipo'];
@@ -20,7 +20,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 ?>
-
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
